@@ -1,6 +1,9 @@
 name: Kaggle Notebook Sync
 on: [workflow_dispatch]
 
+env:
+  KAGGLE_CONFIG_DIR: /home/runner/.kaggle
+
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -14,42 +17,29 @@ jobs:
 
       - name: Install Kaggle CLI
         run: |
-          # Clean installation
-          pip uninstall -y kaggle || true
-          pip install --no-cache-dir kaggle==1.6.0
+          pip install --upgrade pip
+          pip install kaggle==1.6.0
           sudo chmod a+r /opt/hostedtoolcache/Python/*/x64/lib/python*/site-packages/kaggle/__init__.py
 
-      - name: Configure Credentials (Dual Method)
+      - name: Configure Kaggle
         run: |
-          # Method 1: kaggle.json file
-          mkdir -p ~/.kaggle
+          mkdir -p $KAGGLE_CONFIG_DIR
           echo '{
             "username":"${{ secrets.KAGGLE_USERNAME }}",
-            "key":"${{ secrets.KAGGLE_KEY }}"
-          }' > ~/.kaggle/kaggle.json
-          chmod 600 ~/.kaggle/kaggle.json
+            "key":"${{ secrets.KAGGLE_KEY }}",
+            "allow_private":true,
+            "verify_ssl":true
+          }' > $KAGGLE_CONFIG_DIR/kaggle.json
+          chmod 600 $KAGGLE_CONFIG_DIR/kaggle.json
           
-          # Method 2: Environment variables (backup)
-          echo "KAGGLE_USERNAME=${{ secrets.KAGGLE_USERNAME }}" >> $GITHUB_ENV
-          echo "KAGGLE_KEY=${{ secrets.KAGGLE_KEY }}" >> $GITHUB_ENV
-          
-          # Verify both methods
-          echo "=== File Contents ==="
-          cat ~/.kaggle/kaggle.json
-          echo "=== Env Variables ==="
-          echo "KAGGLE_USERNAME: $KAGGLE_USERNAME"
-          echo "KAGGLE_KEY: ${KAGGLE_KEY:0:4}..."
+          echo "=== Config Verification ==="
+          cat $KAGGLE_CONFIG_DIR/kaggle.json | jq .
 
-      - name: Validate Installation
+      - name: Validate Permissions
         run: |
-          echo "=== Kaggle Path ==="
-          which kaggle
-          echo "=== Python Path ==="
-          which python
-          echo "=== Directory Permissions ==="
-          ls -la ~/.kaggle/
-          echo "=== Config Test ==="
-          kaggle config view
+          export PATH=$PATH:~/.local/bin
+          echo "=== Testing API Permissions ==="
+          kaggle kernels status ${{ secrets.KAGGLE_USERNAME }}/YOUR_NOTEBOOK_SLUG
 
       - name: Pull Notebook
         run: |
