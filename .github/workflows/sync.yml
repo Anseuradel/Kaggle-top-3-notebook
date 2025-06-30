@@ -7,20 +7,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Set up Kaggle
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          
+      - name: Install Kaggle API
+        run: |
+          pip install --upgrade pip
+          pip install kaggle --force-reinstall
+          which kaggle  # Verify installation
+          
+      - name: Configure Kaggle
         run: |
           mkdir -p ~/.kaggle
           echo '{"username":"${{ secrets.KAGGLE_USERNAME }}","key":"${{ secrets.KAGGLE_KEY }}"}' > ~/.kaggle/kaggle.json
           chmod 600 ~/.kaggle/kaggle.json
-          # Verify the file was created
-          ls -la ~/.kaggle/
-          cat ~/.kaggle/kaggle.json | jq 'del(.key)' # Prints config without exposing key
           
-      - name: Test Kaggle API
+      - name: Verify Setup
         run: |
+          export PATH=$PATH:~/.local/bin
           kaggle config view
-          kaggle kernels list --user ${{ secrets.KAGGLE_USERNAME }} # Verify authentication
           
       - name: Pull Notebook
         run: |
-          kaggle kernels pull ${{ secrets.KAGGLE_USERNAME }}/your-notebook-slug -p ./notebooks/
+          export PATH=$PATH:~/.local/bin
+          kaggle kernels pull ${{ secrets.KAGGLE_USERNAME }}/YOUR_NOTEBOOK_SLUG -p ./notebooks/ --force
