@@ -1,16 +1,16 @@
-name: Kaggle Notebook Sync
+name: Sync All Kaggle Notebooks
 on: [workflow_dispatch]
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # This is crucial for pushing changes
-    
+      contents: write
+
     steps:
       - uses: actions/checkout@v4
         with:
-          persist-credentials: true  # This preserves the auth token
+          persist-credentials: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -20,24 +20,48 @@ jobs:
       - name: Install Kaggle CLI
         run: |
           pip install --upgrade pip
-          pip install kaggle==1.6.0 --force-reinstall
+          pip install kaggle==1.6.0 nbconvert
 
       - name: Configure Kaggle
         run: |
           mkdir -p ~/.kaggle
-          echo '{"username":"adelanseur","key":"${{ secrets.KAGGLE_KEY }}"}' > ~/.kaggle/kaggle.json
+          echo '{
+            "username":"adelanseur",
+            "key":"${{ secrets.KAGGLE_KEY }}",
+            "allow_private":true
+          }' > ~/.kaggle/kaggle.json
           chmod 600 ~/.kaggle/kaggle.json
 
-      - name: Pull Notebook
+      - name: Sync Notebooks
         run: |
+          # Create directory structure
           mkdir -p "Kaggle-top-3-notebook"
+          
+          # Notebook 1: Manga Sales
           kaggle kernels pull adelanseur/manga-sales-eda-ml -p "Kaggle-top-3-notebook"
-          mv "Kaggle-top-3-notebook/manga-sales-eda-ml.ipynb" "Kaggle-top-3-notebook/Manga Sales Kaggle notebook.ipynb"
+          mv "Kaggle-top-3-notebook/manga-sales-eda-ml.ipynb" "Kaggle-top-3-notebook/1_Manga_Sales_EDA_ML.ipynb"
+          
+          # Notebook 2: [Your Second Notebook]
+          kaggle kernels pull adelanseur/clustering-pca-k-means -p "Kaggle-top-3-notebook"
+          mv "Kaggle-top-3-notebook/second-notebook-slug.ipynb" "Kaggle-top-3-notebook/2_Second_Notebook_Title.ipynb"
+          
+          # Notebook 3: [Your Third Notebook]
+          kaggle kernels pull adelanseur/third-notebook-slug -p "Kaggle-top-3-notebook"
+          mv "Kaggle-top-3-notebook/nlp-gru-emotions-analysis.ipynb" "Kaggle-top-3-notebook/3_Third_Notebook_Title.ipynb"
+
+          echo "=== Downloaded Notebooks ==="
+          ls -la "Kaggle-top-3-notebook/"
+
+      - name: Convert to HTML
+        run: |
+          jupyter nbconvert "Kaggle-top-3-notebook/*.ipynb" --to html
+          echo "=== HTML Versions ==="
+          ls -la "Kaggle-top-3-notebook/*.html"
 
       - name: Commit and Push
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add .
-          git commit -m "Update: Manga Sales Notebook $(date +'%Y-%m-%d %H:%M')"
+          git commit -m "Update: All Kaggle Notebooks $(date +'%Y-%m-%d')"
           git push
