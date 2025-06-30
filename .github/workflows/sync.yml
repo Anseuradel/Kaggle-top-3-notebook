@@ -31,7 +31,7 @@ jobs:
         run: |
           export PATH=$PATH:~/.local/bin
           echo "Checking notebook visibility..."
-          NOTEBOOK_URL="https://www.kaggle.com/${{ secrets.KAGGLE_USERNAME }}/YOUR_NOTEBOOK_SLUG"
+          NOTEBOOK_URL="https://www.kaggle.com/${{ secrets.KAGGLE_USERNAME }}/manga-sales-eda-ml"
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$NOTEBOOK_URL")
           
           if [ "$HTTP_STATUS" -eq 200 ]; then
@@ -48,9 +48,9 @@ jobs:
       - name: Pull Notebook
         run: |
           export PATH=$PATH:~/.local/bin
-          kaggle kernels pull ${{ secrets.KAGGLE_USERNAME }}/YOUR_NOTEBOOK_SLUG -p ./notebooks/
+          kaggle kernels pull ${{ secrets.KAGGLE_USERNAME }}/manga-sales-eda-ml -p ./notebooks/
           ls -la ./notebooks/
 
       - name: Convert to HTML
         run: |
-          jupyter nbconvert ./notebooks/*.ipynb --to html
+   
