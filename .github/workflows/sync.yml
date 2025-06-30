@@ -1,9 +1,6 @@
 name: Kaggle Notebook Sync
 on: [workflow_dispatch]
 
-env:
-  KAGGLE_CONFIG_DIR: /home/runner/.kaggle
-
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -18,31 +15,42 @@ jobs:
       - name: Install Kaggle CLI
         run: |
           pip install --upgrade pip
-          pip install kaggle==1.6.0
-          sudo chmod a+r /opt/hostedtoolcache/Python/*/x64/lib/python*/site-packages/kaggle/__init__.py
+          pip install kaggle==1.6.0 nbconvert
 
       - name: Configure Kaggle
         run: |
-          mkdir -p $KAGGLE_CONFIG_DIR
+          mkdir -p ~/.kaggle
           echo '{
             "username":"${{ secrets.KAGGLE_USERNAME }}",
             "key":"${{ secrets.KAGGLE_KEY }}",
-            "allow_private":true,
-            "verify_ssl":true
-          }' > $KAGGLE_CONFIG_DIR/kaggle.json
-          chmod 600 $KAGGLE_CONFIG_DIR/kaggle.json
-          
-          echo "=== Config Verification ==="
-          cat $KAGGLE_CONFIG_DIR/kaggle.json | jq .
+            "allow_private":true
+          }' > ~/.kaggle/kaggle.json
+          chmod 600 ~/.kaggle/kaggle.json
 
-      - name: Validate Permissions
+      - name: Verify Notebook Visibility
         run: |
           export PATH=$PATH:~/.local/bin
-          echo "=== Testing API Permissions ==="
-          kaggle kernels status ${{ secrets.KAGGLE_USERNAME }}/YOUR_NOTEBOOK_SLUG
+          echo "Checking notebook visibility..."
+          NOTEBOOK_URL="https://www.kaggle.com/${{ secrets.KAGGLE_USERNAME }}/YOUR_NOTEBOOK_SLUG"
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$NOTEBOOK_URL")
+          
+          if [ "$HTTP_STATUS" -eq 200 ]; then
+            echo "✅ Notebook is accessible"
+          else
+            echo "❌ Notebook returned HTTP $HTTP_STATUS"
+            echo "Make sure:"
+            echo "1. Notebook is public (temporarily)"
+            echo "2. URL slug is correct"
+            echo "Current URL: $NOTEBOOK_URL"
+            exit 1
+          fi
 
       - name: Pull Notebook
         run: |
           export PATH=$PATH:~/.local/bin
           kaggle kernels pull ${{ secrets.KAGGLE_USERNAME }}/YOUR_NOTEBOOK_SLUG -p ./notebooks/
           ls -la ./notebooks/
+
+      - name: Convert to HTML
+        run: |
+          jupyter nbconvert ./notebooks/*.ipynb --to html
