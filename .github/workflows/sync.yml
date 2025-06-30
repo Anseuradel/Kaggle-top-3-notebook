@@ -1,6 +1,5 @@
 name: Sync Kaggle Notebooks
-on:
-  workflow_dispatch:
+on: [workflow_dispatch]
 
 jobs:
   sync:
@@ -8,37 +7,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-          
-      - name: Install Kaggle API
-        run: pip install kaggle nbconvert
-
-      - name: Configure Kaggle credentials
+      - name: Set up Kaggle
         run: |
           mkdir -p ~/.kaggle
           echo '{"username":"${{ secrets.KAGGLE_USERNAME }}","key":"${{ secrets.KAGGLE_KEY }}"}' > ~/.kaggle/kaggle.json
           chmod 600 ~/.kaggle/kaggle.json
+          # Verify the file was created
+          ls -la ~/.kaggle/
+          cat ~/.kaggle/kaggle.json | jq 'del(.key)' # Prints config without exposing key
           
-      - name: Download Notebook
+      - name: Test Kaggle API
+        run: |
+          kaggle config view
+          kaggle kernels list --user ${{ secrets.KAGGLE_USERNAME }} # Verify authentication
+          
+      - name: Pull Notebook
         run: |
           kaggle kernels pull ${{ secrets.KAGGLE_USERNAME }}/your-notebook-slug -p ./notebooks/
-          
-      - name: Convert to HTML
-        run: |
-          jupyter nbconvert --to html ./notebooks/*.ipynb
-          
-      - name: Commit changes
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git add .
-          git commit -m "Update notebook [$(date +'%Y-%m-%d')]" || echo "No changes to commit"
-          git push
-
-      - name: Verify setup
-        run: |
-          ls -la ~/.kaggle
-          cat ~/.kaggle/kaggle.json
