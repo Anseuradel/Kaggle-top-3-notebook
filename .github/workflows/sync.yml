@@ -43,10 +43,10 @@ jobs:
           
           # Notebook 2: [Your Second Notebook]
           kaggle kernels pull adelanseur/clustering-pca-k-means -p "Kaggle-top-3-notebook"
-          mv "Kaggle-top-3-notebook/second-notebook-slug.ipynb" "Kaggle-top-3-notebook/2_Second_Notebook_Title.ipynb"
+          mv "Kaggle-top-3-notebook/clustering-pca-k-means.ipynb" "Kaggle-top-3-notebook/2_Second_Notebook_Title.ipynb"
           
           # Notebook 3: [Your Third Notebook]
-          kaggle kernels pull adelanseur/third-notebook-slug -p "Kaggle-top-3-notebook"
+          kaggle kernels pull adelanseur/nlp-gru-emotions-analysis -p "Kaggle-top-3-notebook"
           mv "Kaggle-top-3-notebook/nlp-gru-emotions-analysis.ipynb" "Kaggle-top-3-notebook/3_Third_Notebook_Title.ipynb"
 
           echo "=== Downloaded Notebooks ==="
