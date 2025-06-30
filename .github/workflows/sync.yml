@@ -15,25 +15,37 @@ jobs:
       - name: Install Kaggle API
         run: |
           pip install --upgrade pip
-          pip install kaggle
-          echo "Kaggle version: $(kaggle --version)"
+          pip install kaggle --upgrade
+          sudo apt-get install -y jq  # For JSON parsing
           
       - name: Configure Kaggle
         run: |
           mkdir -p ~/.kaggle
-          echo '{"username":"${{ secrets.KAGGLE_USERNAME }}","key":"${{ secrets.KAGGLE_KEY }}"}' > ~/.kaggle/kaggle.json
+          # Create the config file with proper formatting
+          echo '{"username":"'"${{ secrets.KAGGLE_USERNAME }}"'","key":"'"${{ secrets.KAGGLE_KEY }}"'"}' > ~/.kaggle/kaggle.json
           chmod 600 ~/.kaggle/kaggle.json
           
-      - name: Verify Setup
+          # Verify the file was created correctly
+          echo "Kaggle config file contents:"
+          cat ~/.kaggle/kaggle.json | jq 'del(.key)'  # Shows config without exposing key
+          
+          # Verify the file permissions
+          ls -la ~/.kaggle/
+          
+      - name: Validate Authentication
         run: |
           export PATH=$PATH:~/.local/bin
+          echo "Testing API access..."
           kaggle config view
-          kaggle kernels list --user ${{ secrets.KAGGLE_USERNAME }} --page-size 1
+          kaggle competitions list --sort-by latest --page-size 1
           
       - name: Pull Notebook
         run: |
           export PATH=$PATH:~/.local/bin
-          kaggle kernels pull ${{ secrets.KAGGLE_USERNAME }}/YOUR_NOTEBOOK_SLUG -p ./notebooks/
+          echo "Pulling notebook..."
+          kaggle kernels pull ${{ secrets.KAGGLE_USERNAME }}/ACTUAL_NOTEBOOK_SLUG -p ./notebooks/
           
-      - name: List Downloaded Files
-        run: ls -la ./notebooks/
+      - name: Verify Download
+        run: |
+          ls -la ./notebooks/
+          [ -f "./notebooks/*.ipynb" ] && echo "Download successful!" || echo "Download failed"
