@@ -16,46 +16,31 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install kaggle==1.6.0 --force-reinstall
-          sudo chmod a+r /opt/hostedtoolcache/Python/*/x64/lib/python*/site-packages/kaggle/__init__.py
 
-      - name: Configure Kaggle (Triple Authentication)
+      - name: Configure Kaggle
         run: |
           mkdir -p ~/.kaggle
-          # Method 1: Config file
-          echo '{
-            "username":"adelanseur",
-            "key":"${{ secrets.KAGGLE_KEY }}"
-          }' > ~/.kaggle/kaggle.json
+          echo '{"username":"adelanseur","key":"${{ secrets.KAGGLE_KEY }}"}' > ~/.kaggle/kaggle.json
           chmod 600 ~/.kaggle/kaggle.json
-          
-          # Method 2: Environment variables
-          echo "KAGGLE_USERNAME=adelanseur" >> $GITHUB_ENV
-          echo "KAGGLE_KEY=${{ secrets.KAGGLE_KEY }}" >> $GITHUB_ENV
-          
-          # Method 3: Direct API call
-          echo "=== Testing Direct Auth ==="
-          python -c "
-          from kaggle.api.kaggle_api_extended import KaggleApi
-          api = KaggleApi({'username':'adelanseur','key':'${{ secrets.KAGGLE_KEY }}'})
-          api.authenticate()
-          print('✅ Direct auth successful')"
 
-      - name: Pull Notebook
+      - name: Pull Notebook to Correct Path
         run: |
-          export PATH=$PATH:~/.local/bin
-          export KAGGLE_USERNAME=adelanseur
-          export KAGGLE_KEY=${{ secrets.KAGGLE_KEY }}
+          # Create target directory structure
+          mkdir -p "Kaggle-top-3-notebook"
           
-          echo "=== Pull Attempt ==="
-          kaggle kernels pull adelanseur/manga-sales-eda-ml -p ./notebooks/ || \
-          (echo "Pull failed, trying alternative method..." && \
-           python -m kaggle.cli kernels pull adelanseur/manga-sales-eda-ml -p ./notebooks/)
+          # Download notebook with proper filename
+          kaggle kernels pull adelanseur/manga-sales-eda-ml -p "Kaggle-top-3-notebook"
           
-          ls -la ./notebooks/
+          # Rename to match your desired filename
+          mv "Kaggle-top-3-notebook/manga-sales-eda-ml.ipynb" "Kaggle-top-3-notebook/Manga Sales Kaggle notebook.ipynb"
+          
+          echo "=== Downloaded Files ==="
+          ls -la "Kaggle-top-3-notebook/"
 
-      - name: Convert to HTML
+      - name: Force Update Repository
         run: |
-          [ -f "./notebooks/manga-sales-eda-ml.ipynb" ] && {
-            jupyter nbconvert ./notebooks/*.ipynb --to html
-            echo "✅ Conversion successful"
-          } || echo "⚠️ No notebook found to convert"
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add .
+          git commit -m "Update: Manga Sales Notebook $(date +'%Y-%m-%d %H:%M')" --allow-empty
+          git push origin main
