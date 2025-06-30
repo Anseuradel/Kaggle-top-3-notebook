@@ -15,34 +15,47 @@ jobs:
       - name: Install Kaggle CLI
         run: |
           pip install --upgrade pip
-          pip install kaggle==1.6.0 nbconvert
+          pip install kaggle==1.6.0 --force-reinstall
+          sudo chmod a+r /opt/hostedtoolcache/Python/*/x64/lib/python*/site-packages/kaggle/__init__.py
 
-      - name: Configure Kaggle
+      - name: Configure Kaggle (Triple Authentication)
         run: |
           mkdir -p ~/.kaggle
+          # Method 1: Config file
           echo '{
-            "username":"adelanseur",  # Hardcoded for testing
-            "key":"${{ secrets.KAGGLE_KEY }}",
-            "allow_private":true
+            "username":"adelanseur",
+            "key":"${{ secrets.KAGGLE_KEY }}"
           }' > ~/.kaggle/kaggle.json
           chmod 600 ~/.kaggle/kaggle.json
-
-      - name: Direct API Test
-        run: |
-          export PATH=$PATH:~/.local/bin
-          echo "=== Testing Direct API Access ==="
-          kaggle kernels status adelanseur/manga-sales-eda-ml
+          
+          # Method 2: Environment variables
+          echo "KAGGLE_USERNAME=adelanseur" >> $GITHUB_ENV
+          echo "KAGGLE_KEY=${{ secrets.KAGGLE_KEY }}" >> $GITHUB_ENV
+          
+          # Method 3: Direct API call
+          echo "=== Testing Direct Auth ==="
+          python -c "
+          from kaggle.api.kaggle_api_extended import KaggleApi
+          api = KaggleApi({'username':'adelanseur','key':'${{ secrets.KAGGLE_KEY }}'})
+          api.authenticate()
+          print('✅ Direct auth successful')"
 
       - name: Pull Notebook
         run: |
           export PATH=$PATH:~/.local/bin
-          kaggle kernels pull adelanseur/manga-sales-eda-ml -p ./notebooks/ || echo "Pull attempted"
+          export KAGGLE_USERNAME=adelanseur
+          export KAGGLE_KEY=${{ secrets.KAGGLE_KEY }}
+          
+          echo "=== Pull Attempt ==="
+          kaggle kernels pull adelanseur/manga-sales-eda-ml -p ./notebooks/ || \
+          (echo "Pull failed, trying alternative method..." && \
+           python -m kaggle.cli kernels pull adelanseur/manga-sales-eda-ml -p ./notebooks/)
+          
           ls -la ./notebooks/
 
       - name: Convert to HTML
-        if: success() || failure()  # Runs regardless of previous steps
         run: |
           [ -f "./notebooks/manga-sales-eda-ml.ipynb" ] && {
             jupyter nbconvert ./notebooks/*.ipynb --to html
-            echo "Conversion successful"
-          } || echo "No notebook found to convert"
+            echo "✅ Conversion successful"
+          } || echo "⚠️ No notebook found to convert"
