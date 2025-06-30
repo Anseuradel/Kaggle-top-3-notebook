@@ -1,4 +1,4 @@
-name: Sync Kaggle Notebooks
+name: Kaggle Notebook Sync
 on: [workflow_dispatch]
 
 jobs:
@@ -6,50 +6,56 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-          
-      - name: Install Kaggle API
+
+      - name: Install Kaggle API (Official Method)
         run: |
           pip install --upgrade pip
-          pip install kaggle --upgrade
-          
-      - name: Configure Kaggle
+          pip install kaggle --upgrade --no-cache-dir
+          sudo apt-get install -y jq  # For JSON parsing
+
+      - name: Configure Kaggle Credentials
         run: |
           mkdir -p ~/.kaggle
-          echo '{"username":"${{ secrets.KAGGLE_USERNAME }}","key":"${{ secrets.KAGGLE_KEY }}"}' > ~/.kaggle/kaggle.json
+          # Create config with proper escaping
+          echo "{\"username\":\"${{ secrets.KAGGLE_USERNAME }}\",\"key\":\"${{ secrets.KAGGLE_KEY }}\"}" > ~/.kaggle/kaggle.json
           chmod 600 ~/.kaggle/kaggle.json
           
-          # Verify config
+          # Verify file was created correctly
           echo "Kaggle config:"
-          cat ~/.kaggle/kaggle.json | jq 'del(.key)'
-          
-      - name: Validate Authentication
+          cat ~/.kaggle/kaggle.json | jq .
+
+      - name: Validate Credentials
         run: |
           export PATH=$PATH:~/.local/bin
-          echo "Testing API access..."
-          kaggle config view
-          kaggle competitions list -s latest  # Correct API call
-          
+          echo "Testing credentials..."
+          RESPONSE=$(curl -s -H "Authorization: Kaggle ${{ secrets.KAGGLE_KEY }}" \
+            "https://www.kaggle.com/api/v1/users/check?username=${{ secrets.KAGGLE_USERNAME }}")
+          echo "API Response: $RESPONSE"
+          if [[ "$RESPONSE" == *"success"* ]]; then
+            echo "✅ Authentication successful!";
+          else
+            echo "❌ Authentication failed";
+            exit 1;
+          fi
+
       - name: Pull Notebook
         run: |
           export PATH=$PATH:~/.local/bin
-          echo "Pulling notebook: ${{ secrets.KAGGLE_USERNAME }}/NOTEBOOK_SLUG"
-          kaggle kernels pull ${{ secrets.KAGGLE_USERNAME }}/NOTEBOOK_SLUG -p ./notebooks/ || echo "Pull failed"
+          echo "Pulling notebook..."
+          kaggle kernels pull ${{ secrets.KAGGLE_USERNAME }}/YOUR_NOTEBOOK_SLUG -p ./notebooks/
           ls -la ./notebooks/
-          
-      - name: Convert to HTML
+
+      - name: Verify Download
         run: |
-          pip install nbconvert
-          jupyter nbconvert ./notebooks/*.ipynb --to html
-          
-      - name: Commit Changes
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git add .
-          git commit -m "Update notebook [$(date +'%Y-%m-%d')]" || echo "No changes"
-          git push
+          if [ -f "./notebooks/"*.ipynb ]; then
+            echo "🎉 Notebook downloaded successfully!";
+            exit 0;
+          else
+            echo "❌ Download failed - no .ipynb file found";
+            exit 1;
+          fi
