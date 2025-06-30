@@ -15,8 +15,8 @@ jobs:
       - name: Install Kaggle API
         run: |
           pip install --upgrade pip
-          pip install kaggle --force-reinstall
-          which kaggle  # Verify installation
+          pip install kaggle
+          echo "Kaggle version: $(kaggle --version)"
           
       - name: Configure Kaggle
         run: |
@@ -28,8 +28,12 @@ jobs:
         run: |
           export PATH=$PATH:~/.local/bin
           kaggle config view
+          kaggle kernels list --user ${{ secrets.KAGGLE_USERNAME }} --page-size 1
           
       - name: Pull Notebook
         run: |
           export PATH=$PATH:~/.local/bin
-          kaggle kernels pull ${{ secrets.KAGGLE_USERNAME }}/YOUR_NOTEBOOK_SLUG -p ./notebooks/ --force
+          kaggle kernels pull ${{ secrets.KAGGLE_USERNAME }}/YOUR_NOTEBOOK_SLUG -p ./notebooks/
+          
+      - name: List Downloaded Files
+        run: ls -la ./notebooks/
