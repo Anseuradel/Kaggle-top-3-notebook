@@ -20,32 +20,59 @@ jobs:
       - name: Install Kaggle API
         run: |
           pip install --upgrade pip
-          pip install --upgrade kaggle==1.6.1  # Explicitly use stable version
-          python -c "import kaggle; print(f'Kaggle API version: {kaggle.__version__}')"
+          pip install kaggle==1.6.1 nbconvert
+          sudo chmod a+r /opt/hostedtoolcache/Python/*/x64/lib/python*/site-packages/kaggle/__init__.py
 
-      - name: Configure Kaggle
+      - name: Configure Authentication (Triple Method)
         run: |
+          # Method 1: kaggle.json file
           mkdir -p ~/.kaggle
           echo '{
             "username":"adelanseur",
-            "key":"${{ secrets.KAGGLE_KEY }}",
-            "allow_private":true,
-            "verify_ssl":true
+            "key":"${{ secrets.KAGGLE_KEY }}"
           }' > ~/.kaggle/kaggle.json
           chmod 600 ~/.kaggle/kaggle.json
           
-          echo "=== Config Test ==="
-          kaggle config view
-
-      - name: Verify Notebook Access
-        run: |
-          echo "=== Testing API Access ==="
-          NOTEBOOK_URL="https://www.kaggle.com/api/v1/kernels/status/adelanseur/manga-sales-eda-ml"
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Kaggle ${{ secrets.KAGGLE_KEY }}" "$NOTEBOOK_URL")
+          # Method 2: Environment variables
+          echo "KAGGLE_USERNAME=adelanseur" >> $GITHUB_ENV
+          echo "KAGGLE_KEY=${{ secrets.KAGGLE_KEY }}" >> $GITHUB_ENV
           
-          if [ "$HTTP_STATUS" -eq 200 ]; then
-            echo "✅ API Access Verified"
-          else
-            echo "❌ API Access Failed (HTTP $HTTP_STATUS)"
-            echo "Required Actions:"
-            echo "1. Regenerate API
+          # Method 3: Direct Python authentication
+          python -c "
+          from kaggle.api.kaggle_api_extended import KaggleApi
+          api = KaggleApi({'username':'adelanseur','key':'${{ secrets.KAGGLE_KEY }}'})
+          api.authenticate()
+          print('✅ Direct authentication successful')"
+
+      - name: Verify Setup
+        run: |
+          echo "=== Config File ==="
+          ls -la ~/.kaggle/
+          cat ~/.kaggle/kaggle.json | jq 'del(.key)'
+          
+          echo "=== Environment Variables ==="
+          echo "KAGGLE_USERNAME: $KAGGLE_USERNAME"
+          echo "KAGGLE_KEY: ${KAGGLE_KEY:0:4}..."
+          
+          echo "=== API Test ==="
+          kaggle kernels list --user adelanseur --page-size 1
+
+      - name: Download Notebook
+        run: |
+          mkdir -p "Kaggle-top-3-notebook"
+          kaggle kernels pull adelanseur/manga-sales-eda-ml -p "Kaggle-top-3-notebook"
+          mv "Kaggle-top-3-notebook/manga-sales-eda-ml.ipynb" "Kaggle-top-3-notebook/1_Manga_Sales.ipynb"
+
+      - name: Final Verification
+        run: |
+          echo "=== Downloaded Files ==="
+          ls -la "Kaggle-top-3-notebook/"
+          [ -f "Kaggle-top-3-notebook/1_Manga_Sales.ipynb" ] || exit 1
+
+      - name: Commit Changes
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add .
+          git commit -m "Update: Manga Notebook $(date +'%Y-%m-%d %H:%M')"
+          git push
