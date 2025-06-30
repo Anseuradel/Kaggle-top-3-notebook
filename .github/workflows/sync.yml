@@ -12,53 +12,50 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Dependencies
+      - name: Install Kaggle CLI
         run: |
           pip install --upgrade pip
-          pip install kaggle==1.6.0  # Pinned known-working version
-          sudo apt-get install -y jq curl
+          pip install kaggle==1.6.0
+          which kaggle
+          kaggle --version
 
-      - name: Create Kaggle Config
+      - name: Configure Kaggle
         run: |
           mkdir -p ~/.kaggle
-          # Triple-checked JSON formatting
-          echo "{
-            \"username\": \"${{ secrets.KAGGLE_USERNAME }}\",
-            \"key\": \"${{ secrets.KAGGLE_KEY }}\"
-          }" > ~/.kaggle/kaggle.json
+          # Create PROPERLY formatted JSON
+          echo '{
+            "username": "'${{ secrets.KAGGLE_USERNAME }}'",
+            "key": "'${{ secrets.KAGGLE_KEY }}'"
+          }' > ~/.kaggle/kaggle.json
           chmod 600 ~/.kaggle/kaggle.json
-
-          echo "=== Config File Contents ==="
+          
+          echo "=== Config Verification ==="
           cat ~/.kaggle/kaggle.json | jq .
-          echo "==========================="
+
+      - name: Test API Connection
+        run: |
+          export PATH=$PATH:~/.local/bin
+          echo "=== Network Test ==="
+          ping -c 3 www.kaggle.com
+          curl -v https://www.kaggle.com/api/v1
 
       - name: Validate Credentials
         run: |
           export PATH=$PATH:~/.local/bin
+          echo "=== Authentication Test ==="
+          FULL_URL="https://www.kaggle.com/api/v1/users/check?username=${{ secrets.KAGGLE_USERNAME }}"
+          echo "Testing URL: $FULL_URL"
           
-          echo "=== Testing Authentication ==="
-          echo "Using key starting with: ${KAGGLE_KEY:0:4}..."  # Shows first 4 chars
-          
-          API_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
             -H "Authorization: Kaggle ${{ secrets.KAGGLE_KEY }}" \
-            "https://www.kaggle.com/api/v1/users/check")
-            
-          echo "HTTP Status Code: $API_RESPONSE"
+            "$FULL_URL")
           
-          if [ "$API_RESPONSE" -eq 200 ]; then
-            echo "✅ Authentication successful!"
-          else
-            echo "❌ Authentication failed (HTTP $API_RESPONSE)"
-            echo "Possible reasons:"
-            echo "1. Invalid API key"
-            echo "2. Key expired (generate new one)"
-            echo "3. Incorrect username"
-            echo "4. Network restrictions"
-            exit 1
-          fi
+          echo "HTTP Status: $RESPONSE"
+          [ "$RESPONSE" -eq 200 ] || exit 1
 
       - name: Pull Notebook
         run: |
           export PATH=$PATH:~/.local/bin
-          echo "Pulling notebook..."
+          echo "Pulling: ${{ secrets.KAGGLE_USERNAME }}/YOUR_NOTEBOOK_SLUG"
           kaggle kernels pull ${{ secrets.KAGGLE_USERNAME }}/YOUR_NOTEBOOK_SLUG -p ./notebooks/
+          ls -la ./notebooks/
