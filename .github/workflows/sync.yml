@@ -17,10 +17,10 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Kaggle CLI
+      - name: Install Dependencies
         run: |
           pip install --upgrade pip
-          pip install kaggle==1.6.0 nbconvert
+          pip install kaggle==1.6.0 nbconvert ipython
 
       - name: Configure Kaggle
         run: |
@@ -34,34 +34,36 @@ jobs:
 
       - name: Sync Notebooks
         run: |
-          # Create directory structure
           mkdir -p "Kaggle-top-3-notebook"
           
-          # Notebook 1: Manga Sales
+          # Clean previous files
+          rm -f Kaggle-top-3-notebook/*.ipynb
+          rm -f Kaggle-top-3-notebook/*.html
+          
+          # Download and rename notebooks
           kaggle kernels pull adelanseur/manga-sales-eda-ml -p "Kaggle-top-3-notebook"
-          mv "Kaggle-top-3-notebook/manga-sales-eda-ml.ipynb" "Kaggle-top-3-notebook/1_Manga_Sales_EDA_ML.ipynb"
+          mv "Kaggle-top-3-notebook/manga-sales-eda-ml.ipynb" "Kaggle-top-3-notebook/1_Manga_Sales.ipynb"
           
-          # Notebook 2: [Your Second Notebook]
-          kaggle kernels pull adelanseur/clustering-pca-k-means -p "Kaggle-top-3-notebook"
-          mv "Kaggle-top-3-notebook/clustering-pca-k-means.ipynb" "Kaggle-top-3-notebook/2_Second_Notebook_Title.ipynb"
+          kaggle kernels pull adelanseur/second-notebook -p "Kaggle-top-3-notebook"
+          mv "Kaggle-top-3-notebook/second-notebook.ipynb" "Kaggle-top-3-notebook/2_Time_Series.ipynb"
           
-          # Notebook 3: [Your Third Notebook]
-          kaggle kernels pull adelanseur/nlp-gru-emotions-analysis -p "Kaggle-top-3-notebook"
-          mv "Kaggle-top-3-notebook/nlp-gru-emotions-analysis.ipynb" "Kaggle-top-3-notebook/3_Third_Notebook_Title.ipynb"
-
-          echo "=== Downloaded Notebooks ==="
-          ls -la "Kaggle-top-3-notebook/"
+          kaggle kernels pull adelanseur/third-notebook -p "Kaggle-top-3-notebook"
+          mv "Kaggle-top-3-notebook/third-notebook.ipynb" "Kaggle-top-3-notebook/3_Image_Classification.ipynb"
 
       - name: Convert to HTML
         run: |
-          jupyter nbconvert "Kaggle-top-3-notebook/*.ipynb" --to html
-          echo "=== HTML Versions ==="
-          ls -la "Kaggle-top-3-notebook/*.html"
+          cd Kaggle-top-3-notebook
+          for notebook in *.ipynb; do
+            jupyter nbconvert "$notebook" --to html
+            echo "Converted $notebook to HTML"
+          done
+          ls -la *.html
+          cd ..
 
       - name: Commit and Push
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add .
-          git commit -m "Update: All Kaggle Notebooks $(date +'%Y-%m-%d')"
+          git commit -m "Update: All Notebooks $(date +'%Y-%m-%d %H:%M')"
           git push
