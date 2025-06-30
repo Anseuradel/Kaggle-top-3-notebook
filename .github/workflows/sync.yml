@@ -37,3 +37,8 @@ jobs:
           git add .
           git commit -m "Update notebook [$(date +'%Y-%m-%d')]" || echo "No changes to commit"
           git push
+
+      - name: Verify setup
+        run: |
+          ls -la ~/.kaggle
+          cat ~/.kaggle/kaggle.json
