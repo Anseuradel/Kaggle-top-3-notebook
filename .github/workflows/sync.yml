@@ -16,36 +16,40 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install kaggle --upgrade
-          sudo apt-get install -y jq  # For JSON parsing
           
       - name: Configure Kaggle
         run: |
           mkdir -p ~/.kaggle
-          # Create the config file with proper formatting
-          echo '{"username":"'"${{ secrets.KAGGLE_USERNAME }}"'","key":"'"${{ secrets.KAGGLE_KEY }}"'"}' > ~/.kaggle/kaggle.json
+          echo '{"username":"${{ secrets.KAGGLE_USERNAME }}","key":"${{ secrets.KAGGLE_KEY }}"}' > ~/.kaggle/kaggle.json
           chmod 600 ~/.kaggle/kaggle.json
           
-          # Verify the file was created correctly
-          echo "Kaggle config file contents:"
-          cat ~/.kaggle/kaggle.json | jq 'del(.key)'  # Shows config without exposing key
-          
-          # Verify the file permissions
-          ls -la ~/.kaggle/
+          # Verify config
+          echo "Kaggle config:"
+          cat ~/.kaggle/kaggle.json | jq 'del(.key)'
           
       - name: Validate Authentication
         run: |
           export PATH=$PATH:~/.local/bin
           echo "Testing API access..."
           kaggle config view
-          kaggle competitions list --sort-by latest --page-size 1
+          kaggle competitions list -s latest  # Correct API call
           
       - name: Pull Notebook
         run: |
           export PATH=$PATH:~/.local/bin
-          echo "Pulling notebook..."
-          kaggle kernels pull ${{ secrets.KAGGLE_USERNAME }}/ACTUAL_NOTEBOOK_SLUG -p ./notebooks/
-          
-      - name: Verify Download
-        run: |
+          echo "Pulling notebook: ${{ secrets.KAGGLE_USERNAME }}/NOTEBOOK_SLUG"
+          kaggle kernels pull ${{ secrets.KAGGLE_USERNAME }}/NOTEBOOK_SLUG -p ./notebooks/ || echo "Pull failed"
           ls -la ./notebooks/
-          [ -f "./notebooks/*.ipynb" ] && echo "Download successful!" || echo "Download failed"
+          
+      - name: Convert to HTML
+        run: |
+          pip install nbconvert
+          jupyter nbconvert ./notebooks/*.ipynb --to html
+          
+      - name: Commit Changes
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add .
+          git commit -m "Update notebook [$(date +'%Y-%m-%d')]" || echo "No changes"
+          git push
