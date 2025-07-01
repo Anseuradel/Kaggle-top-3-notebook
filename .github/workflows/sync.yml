@@ -71,28 +71,36 @@ jobs:
           kaggle kernels pull adelanseur/nlp-gru-emotions-analysis -p Kaggle-top-3-notebook/3_NLP_GRU_Emotions
           mv Kaggle-top-3-notebook/3_NLP_GRU_Emotions/nlp-gru-emotions-analysis.ipynb Kaggle-top-3-notebook/3_NLP_GRU_Emotions/3_NLP_GRU_Emotions.ipynb
 
-      - name: Execute and Convert to standalone HTML
+      - name: Execute and Convert Notebooks to HTML
         run: |
           for folder in Kaggle-top-3-notebook/*/; do
             base=$(basename "$folder")
-            ipynb="$folder/$base.ipynb"
-            html="$folder/$base.html"
-
-            echo "▶️ Executing $ipynb"
-            jupyter nbconvert --to notebook --inplace --execute --ExecutePreprocessor.timeout=300 "$ipynb" || echo "⚠️ Execution failed for $ipynb"
-
-            echo "🌐 Converting to standalone HTML: $html"
-            jupyter nbconvert --to html --output "$html" "$ipynb" || echo "⚠️ Conversion failed for $ipynb"
+            ipynb="$folder/${base}.ipynb"
+            html="$folder/${base}.html"
+      
+            echo "▶️ Executing: $ipynb"
+            if [ -f "$ipynb" ]; then
+              jupyter nbconvert "$ipynb" \
+                --to html \
+                --output "$html" \
+                --execute \
+                --ExecutePreprocessor.timeout=300 \
+                --EmbedImagesPreprocessor.embed_images=True \
+                --no-input
+              echo "✅ Converted: $html"
+            else
+              echo "❌ Notebook file not found: $ipynb"
+            fi
           done
 
-      - name: Prepare GitHub Pages folder
+
+      - name: Copy HTML files to /docs for GitHub Pages
         run: |
           mkdir -p docs
-          echo "Looking for HTML files under Kaggle-top-3-notebook/"
-          find Kaggle-top-3-notebook/ -name '*.html' -print || echo "⚠️ No HTML files found"
-          find Kaggle-top-3-notebook/ -name '*.html' -exec cp {} docs/ \;
-          echo "Copied HTML files to docs/:"
-          ls -l docs/
+          find Kaggle-top-3-notebook -name "*.html" -exec cp {} docs/ \;
+          echo "✅ HTML files copied to docs/"
+          ls -l docs
+
 
 
       - name: Commit Changes
