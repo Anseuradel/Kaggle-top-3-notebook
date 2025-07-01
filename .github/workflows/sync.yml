@@ -88,7 +88,12 @@ jobs:
       - name: Prepare GitHub Pages folder
         run: |
           mkdir -p docs
-          cp Kaggle-top-3-notebook/*/*.html docs/
+          echo "Looking for HTML files under Kaggle-top-3-notebook/"
+          find Kaggle-top-3-notebook/ -name '*.html' -print || echo "⚠️ No HTML files found"
+          find Kaggle-top-3-notebook/ -name '*.html' -exec cp {} docs/ \;
+          echo "Copied HTML files to docs/:"
+          ls -l docs/
+
 
       - name: Commit Changes
         run: |
