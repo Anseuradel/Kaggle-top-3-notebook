@@ -34,6 +34,23 @@ jobs:
           rm -rf Kaggle-top-3-notebook
           mkdir -p Kaggle-top-3-notebook
 
+      - name: Download Datasets
+        run: |
+          # Dataset 1 for 2_Clustering_PCA_KMeans notebook
+          kaggle datasets download -d rohan0301/unsupervised-learning-on-country-data -p Kaggle-top-3-notebook/2_Clustering_PCA_KMeans
+          unzip -o Kaggle-top-3-notebook/2_Clustering_PCA_KMeans/unsupervised-learning-on-country-data.zip -d Kaggle-top-3-notebook/2_Clustering_PCA_KMeans
+          rm Kaggle-top-3-notebook/2_Clustering_PCA_KMeans/unsupervised-learning-on-country-data.zip
+
+          # Dataset 2 for 1_Manga_Sales notebook
+          kaggle datasets download -d drahulsingh/best-selling-manga -p Kaggle-top-3-notebook/1_Manga_Sales
+          unzip -o Kaggle-top-3-notebook/1_Manga_Sales/best-selling-manga.zip -d Kaggle-top-3-notebook/1_Manga_Sales
+          rm Kaggle-top-3-notebook/1_Manga_Sales/best-selling-manga.zip
+
+          # Dataset 3 for 3_NLP_GRU_Emotions notebook
+          kaggle datasets download -d nelgiriyewithana/emotions -p Kaggle-top-3-notebook/3_NLP_GRU_Emotions
+          unzip -o Kaggle-top-3-notebook/3_NLP_GRU_Emotions/emotions.zip -d Kaggle-top-3-notebook/3_NLP_GRU_Emotions
+          rm Kaggle-top-3-notebook/3_NLP_GRU_Emotions/emotions.zip
+
       - name: Download Notebooks into Named Subfolders
         run: |
           # Manga Sales
@@ -73,7 +90,7 @@ jobs:
           git add -f Kaggle-top-3-notebook/**/*
           git status
 
-          git commit -m "chore: Sync and update notebooks on $(date +'%Y-%m-%d')" || \
-            (echo "⚠️ No changes to commit" && git commit --allow-empty -m "chore: No notebook changes but ran successfully")
+          git commit -m "chore: Sync and update notebooks and datasets on $(date +'%Y-%m-%d')" || \
+            (echo "⚠️ No changes to commit" && git commit --allow-empty -m "chore: No notebook or dataset changes but ran successfully")
 
           git push
