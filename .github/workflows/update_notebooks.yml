@@ -32,9 +32,11 @@ jobs:
       - name: Set up Kaggle API token
         run: |
           mkdir -p ~/.config/kaggle
-          echo "${{ secrets.KAGGLE_JSON }}" > ~/.config/kaggle/kaggle.json
+          printf '%s' "${KAGGLE_JSON}" > ~/.config/kaggle/kaggle.json
           chmod 600 ~/.config/kaggle/kaggle.json
-        shell: bash
+        env:
+          KAGGLE_JSON: ${{ secrets.KAGGLE_JSON }}
+
 
 
       - name: 🧠 Download Top 3 Notebooks
