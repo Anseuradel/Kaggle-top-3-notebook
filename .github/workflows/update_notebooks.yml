@@ -1,39 +1,37 @@
-name: Update Kaggle Top Notebooks
+name: Auto Update Notebooks
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # every day at midnight UTC
-  workflow_dispatch:
+    - cron: '0 8 * * *'  # Runs daily at 08:00 UTC
+  workflow_dispatch:      # Allows manual triggering from GitHub UI
 
 jobs:
   update:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.10
+          python-version: 3.11  # Or 3.10/3.12 — NOT 3.1
 
       - name: Install dependencies
         run: |
-          pip install kaggle
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Set up Kaggle API
-        run: |
-          mkdir -p ~/.kaggle
-          echo "${{ secrets.KAGGLE_JSON }}" > ~/.kaggle/kaggle.json
-          chmod 600 ~/.kaggle/kaggle.json
-
-      - name: Run notebook downloader
+      - name: Run notebook fetcher
         run: python scripts/download_notebooks.py
 
-      - name: Commit and push if changed
+      - name: Commit changes if any
         run: |
-          git config --global user.email "github-actions@github.com"
-          git config --global user.name "GitHub Actions"
-          git add Kaggle-top-3-notebook/
-          git diff --cached --quiet || git commit -m "📥 Auto-update top Kaggle notebooks"
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add .
+          git diff --cached --quiet || git commit -m "🔄 Auto-update notebooks"
           git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
