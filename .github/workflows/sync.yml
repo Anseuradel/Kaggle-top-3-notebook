@@ -59,6 +59,15 @@ jobs:
           ls -la *.html
           cd ..
 
+      - name: Fix HTML Rendering
+        run: |
+          cd Kaggle-top-3-notebook
+          for file in *.html; do
+            echo "<!DOCTYPE html>" > temp.html
+            cat "$file" >> temp.html
+            mv temp.html "$file"
+          done
+
       - name: Commit Changes
         run: |
           git config --global user.name "GitHub Actions"
