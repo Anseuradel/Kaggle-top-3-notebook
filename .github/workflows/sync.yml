@@ -1,4 +1,4 @@
-name: Sync All Kaggle Notebooks
+name: Sync Kaggle Notebooks
 on: [workflow_dispatch]
 
 jobs:
@@ -6,64 +6,30 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      packages: read
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          persist-credentials: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: Install Kaggle API
+      - name: Install Dependencies
         run: |
-          pip install --upgrade pip
-          pip install kaggle==1.6.1 nbconvert
-          sudo chmod a+r /opt/hostedtoolcache/Python/*/x64/lib/python*/site-packages/kaggle/__init__.py
+          pip install --upgrade pip kaggle nbconvert
 
-      - name: Configure Authentication
+      - name: Configure Kaggle API
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
         run: |
           mkdir -p ~/.kaggle
-          echo '{
-            "username":"adelanseur",
-            "key":"${{ secrets.KAGGLE_KEY }}",
-            "allow_private":true
-          }' > ~/.kaggle/kaggle.json
+          echo '{"username":"'$KAGGLE_USERNAME'","key":"'$KAGGLE_KEY'"}' > ~/.kaggle/kaggle.json
           chmod 600 ~/.kaggle/kaggle.json
 
-      - name: Download All Notebooks
+      - name: Download Notebooks
         run: |
           mkdir -p "Kaggle-top-3-notebook"
-          
-          # 1. Manga Sales Notebook (already working)
           kaggle kernels pull adelanseur/manga-sales-eda-ml -p "Kaggle-top-3-notebook"
-          mv "Kaggle-top-3-notebook/manga-sales-eda-ml.ipynb" "Kaggle-top-3-notebook/1_Manga_Sales.ipynb"
-          
-          # 2. Second Notebook (REPLACE with your actual notebook)
-          kaggle kernels pull adelanseur/your-second-notebook-slug -p "Kaggle-top-3-notebook"
-          mv "Kaggle-top-3-notebook/your-second-notebook-slug.ipynb" "Kaggle-top-3-notebook/2_Second_Notebook.ipynb"
-          
-          # 3. Third Notebook (REPLACE with your actual notebook)
-          kaggle kernels pull adelanseur/your-third-notebook-slug -p "Kaggle-top-3-notebook"
-          mv "Kaggle-top-3-notebook/your-third-notebook-slug.ipynb" "Kaggle-top-3-notebook/3_Third_Notebook.ipynb"
-
-          echo "=== Downloaded Notebooks ==="
-          ls -la "Kaggle-top-3-notebook/"
-
-      - name: Convert to HTML
-        run: |
-          cd "Kaggle-top-3-notebook"
-          jupyter nbconvert *.ipynb --to html
-          echo "=== HTML Files ==="
-          ls -la *.html
-          cd ..
-
-      - name: Commit All Changes
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git add .
-          git commit -m "Update: All 3 Notebooks $(date +'%Y-%m-%d %H:%M')"
-          git push
