@@ -6,9 +6,9 @@ This repo automatically syncs my top Kaggle notebooks with full outputs and visu
 
 | # | Title | Description | View |
 |--|--|--|--|
-| 1 | Manga Sales Analysis | EDA + ML on manga sales data | [Notebook](Kaggle-top-3-notebook/1_Manga_Sales/notebook.ipynb) |
-| 2 | PCA + Clustering | Unsupervised clustering with PCA | [Notebook](Kaggle-top-3-notebook/2_Clustering_PCA_KMeans/notebook.ipynb) |
-| 3 | GRU for Emotion Detection | NLP using GRU on emotion dataset | [Notebook](Kaggle-top-3-notebook/3_NLP_GRU_Emotions/notebook.ipynb) |
+| 1 | Manga Sales Analysis | EDA + ML on manga sales data | [Notebook](Kaggle-top-3-notebook/1_Manga_Sales.ipynb) |
+| 2 | PCA + Clustering | Unsupervised clustering with PCA | [Notebook](Kaggle-top-3-notebook/2_Clustering_PCA_KMeans.ipynb) |
+| 3 | GRU for Emotion Detection | NLP using GRU on emotion dataset | [Notebook](Kaggle-top-3-notebook/3_NLP_GRU_Emotions.ipynb) |
 
 ---
 
