@@ -30,45 +30,35 @@ jobs:
           echo '{"username":"'$KAGGLE_USERNAME'","key":"'$KAGGLE_KEY'"}' > ~/.kaggle/kaggle.json
           chmod 600 ~/.kaggle/kaggle.json
 
-      - name: Download Top 3 Notebooks
+      - name: Download Top 2 Notebooks
         run: |
           mkdir -p "Kaggle-top-3-notebook"
           
-          # 1. Manga Sales Notebook
-          kaggle kernels pull adelanseur/manga-sales-eda-ml -p "Kaggle-top-3-notebook" && \
-            mv "Kaggle-top-3-notebook/manga-sales-eda-ml.ipynb" "Kaggle-top-3-notebook/1_Manga_Sales.ipynb" || \
-            echo "❌ Failed to download Manga Sales notebook"
-
-          # 2. clustering-pca-k-means
+          # 1. clustering-pca-k-means
           kaggle kernels pull adelanseur/clustering-pca-k-means -p "Kaggle-top-3-notebook" && \
             mv "Kaggle-top-3-notebook/clustering-pca-k-means.ipynb" "Kaggle-top-3-notebook/2_clustering-pca-k-means.ipynb" || \
-            echo "❌ Failed to download Second Notebook"
+            echo "❌ Failed to download clustering-pca-k-means"
 
-          # 3. nlp-gru-emotions-analysis
+          # 2. nlp-gru-emotions-analysis
           kaggle kernels pull adelanseur/nlp-gru-emotions-analysis -p "Kaggle-top-3-notebook" && \
             mv "Kaggle-top-3-notebook/nlp-gru-emotions-analysis.ipynb" "Kaggle-top-3-notebook/3_nlp-gru-emotions-analysis.ipynb" || \
-            echo "❌ Failed to download Third Notebook"
+            echo "❌ Failed to download nlp-gru-emotions-analysis"
 
-      - name: Execute and Convert to HTML
+      - name: Execute Notebooks
         run: |
           cd Kaggle-top-3-notebook
           for nb in *.ipynb; do
-            jupyter nbconvert --to html --execute --ExecutePreprocessor.timeout=600 "$nb" --output "${nb%.ipynb}.html" || \
-              echo "⚠️ Failed to convert $nb"
+            jupyter nbconvert --to notebook --inplace --execute --ExecutePreprocessor.timeout=600 "$nb" || \
+              echo "⚠️ Execution failed for $nb"
           done
           cd ..
 
-      - name: Move HTML to docs for GitHub Pages
-        run: |
-          mkdir -p docs
-          cp Kaggle-top-3-notebook/*.html docs/
-
-      - name: Commit Changes
+      - name: Commit Updated Notebooks
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-          git add -f Kaggle-top-3-notebook/* docs/*
+          git add -f Kaggle-top-3-notebook/*.ipynb
           git status
-          git commit -m "chore: Sync top 3 notebooks and HTMLs $(date +'%Y-%m-%d')" || \
+          git commit -m "chore: Update notebooks with outputs $(date +'%Y-%m-%d')" || \
             (echo "⚠️ No changes to commit" && git commit --allow-empty -m "Debug: Empty commit")
           git push
