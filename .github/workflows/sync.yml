@@ -31,25 +31,28 @@ jobs:
 
       - name: Clean Previous Outputs
         run: |
-          rm -rf Kaggle-top-3-notebook
+          rm -rf Kaggle-top-3-notebook docs
           mkdir -p Kaggle-top-3-notebook
 
       - name: Download Datasets
         run: |
           # Dataset 1 for 2_Clustering_PCA_KMeans notebook
-          kaggle datasets download -d rohan0301/unsupervised-learning-on-country-data -p Kaggle-top-3-notebook/2_Clustering_PCA_KMeans
-          unzip -o Kaggle-top-3-notebook/2_Clustering_PCA_KMeans/unsupervised-learning-on-country-data.zip -d Kaggle-top-3-notebook/2_Clustering_PCA_KMeans
-          rm Kaggle-top-3-notebook/2_Clustering_PCA_KMeans/unsupervised-learning-on-country-data.zip
+          mkdir -p Kaggle-top-3-notebook/2_Clustering_PCA_KMeans/dataset_files
+          kaggle datasets download -d rohan0301/unsupervised-learning-on-country-data -p Kaggle-top-3-notebook/2_Clustering_PCA_KMeans/dataset_files
+          unzip -o Kaggle-top-3-notebook/2_Clustering_PCA_KMeans/dataset_files/unsupervised-learning-on-country-data.zip -d Kaggle-top-3-notebook/2_Clustering_PCA_KMeans/dataset_files
+          rm Kaggle-top-3-notebook/2_Clustering_PCA_KMeans/dataset_files/unsupervised-learning-on-country-data.zip
 
           # Dataset 2 for 1_Manga_Sales notebook
-          kaggle datasets download -d drahulsingh/best-selling-manga -p Kaggle-top-3-notebook/1_Manga_Sales
-          unzip -o Kaggle-top-3-notebook/1_Manga_Sales/best-selling-manga.zip -d Kaggle-top-3-notebook/1_Manga_Sales
-          rm Kaggle-top-3-notebook/1_Manga_Sales/best-selling-manga.zip
+          mkdir -p Kaggle-top-3-notebook/1_Manga_Sales/dataset_files
+          kaggle datasets download -d drahulsingh/best-selling-manga -p Kaggle-top-3-notebook/1_Manga_Sales/dataset_files
+          unzip -o Kaggle-top-3-notebook/1_Manga_Sales/dataset_files/best-selling-manga.zip -d Kaggle-top-3-notebook/1_Manga_Sales/dataset_files
+          rm Kaggle-top-3-notebook/1_Manga_Sales/dataset_files/best-selling-manga.zip
 
           # Dataset 3 for 3_NLP_GRU_Emotions notebook
-          kaggle datasets download -d nelgiriyewithana/emotions -p Kaggle-top-3-notebook/3_NLP_GRU_Emotions
-          unzip -o Kaggle-top-3-notebook/3_NLP_GRU_Emotions/emotions.zip -d Kaggle-top-3-notebook/3_NLP_GRU_Emotions
-          rm Kaggle-top-3-notebook/3_NLP_GRU_Emotions/emotions.zip
+          mkdir -p Kaggle-top-3-notebook/3_NLP_GRU_Emotions/dataset_files
+          kaggle datasets download -d nelgiriyewithana/emotions -p Kaggle-top-3-notebook/3_NLP_GRU_Emotions/dataset_files
+          unzip -o Kaggle-top-3-notebook/3_NLP_GRU_Emotions/dataset_files/emotions.zip -d Kaggle-top-3-notebook/3_NLP_GRU_Emotions/dataset_files
+          rm Kaggle-top-3-notebook/3_NLP_GRU_Emotions/dataset_files/emotions.zip
 
       - name: Download Notebooks into Named Subfolders
         run: |
@@ -68,7 +71,7 @@ jobs:
           kaggle kernels pull adelanseur/nlp-gru-emotions-analysis -p Kaggle-top-3-notebook/3_NLP_GRU_Emotions
           mv Kaggle-top-3-notebook/3_NLP_GRU_Emotions/nlp-gru-emotions-analysis.ipynb Kaggle-top-3-notebook/3_NLP_GRU_Emotions/3_NLP_GRU_Emotions.ipynb
 
-      - name: Execute and Convert to HTML
+      - name: Execute and Convert to standalone HTML
         run: |
           for folder in Kaggle-top-3-notebook/*/; do
             base=$(basename "$folder")
@@ -78,19 +81,24 @@ jobs:
             echo "▶️ Executing $ipynb"
             jupyter nbconvert --to notebook --inplace --execute --ExecutePreprocessor.timeout=300 "$ipynb" || echo "⚠️ Execution failed for $ipynb"
 
-            echo "🌐 Converting to HTML: $html"
+            echo "🌐 Converting to standalone HTML: $html"
             jupyter nbconvert --to html --output "$html" "$ipynb" || echo "⚠️ Conversion failed for $ipynb"
           done
+
+      - name: Prepare GitHub Pages folder
+        run: |
+          mkdir -p docs
+          cp Kaggle-top-3-notebook/*/*.html docs/
 
       - name: Commit Changes
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
 
-          git add -f Kaggle-top-3-notebook/**/*
+          git add -f Kaggle-top-3-notebook/**/* docs/*
           git status
 
-          git commit -m "chore: Sync and update notebooks and datasets on $(date +'%Y-%m-%d')" || \
-            (echo "⚠️ No changes to commit" && git commit --allow-empty -m "chore: No notebook or dataset changes but ran successfully")
+          git commit -m "chore: Sync and update notebooks, datasets, and HTML previews on $(date +'%Y-%m-%d')" || \
+            (echo "⚠️ No changes to commit" && git commit --allow-empty -m "chore: Empty commit run")
 
           git push
