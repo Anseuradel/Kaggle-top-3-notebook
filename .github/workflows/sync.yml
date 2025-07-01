@@ -34,39 +34,35 @@ jobs:
           rm -rf Kaggle-top-3-notebook
           mkdir -p Kaggle-top-3-notebook
 
-      - name: Download Notebooks into Subfolders
+      - name: Download Notebooks into Named Subfolders
         run: |
-          mkdir -p Kaggle-top-3-notebook
-
           # Manga Sales
-          kaggle kernels pull adelanseur/manga-sales-eda-ml -p Kaggle-top-3-notebook
           mkdir -p Kaggle-top-3-notebook/1_Manga_Sales/images
-          mv Kaggle-top-3-notebook/manga-sales-eda-ml.ipynb Kaggle-top-3-notebook/1_Manga_Sales/notebook.ipynb
+          kaggle kernels pull adelanseur/manga-sales-eda-ml -p Kaggle-top-3-notebook/1_Manga_Sales
+          mv Kaggle-top-3-notebook/1_Manga_Sales/manga-sales-eda-ml.ipynb Kaggle-top-3-notebook/1_Manga_Sales/1_Manga_Sales.ipynb
 
           # Clustering
-          kaggle kernels pull adelanseur/clustering-pca-k-means -p Kaggle-top-3-notebook
           mkdir -p Kaggle-top-3-notebook/2_Clustering_PCA_KMeans/images
-          mv Kaggle-top-3-notebook/clustering-pca-k-means.ipynb Kaggle-top-3-notebook/2_Clustering_PCA_KMeans/notebook.ipynb
+          kaggle kernels pull adelanseur/clustering-pca-k-means -p Kaggle-top-3-notebook/2_Clustering_PCA_KMeans
+          mv Kaggle-top-3-notebook/2_Clustering_PCA_KMeans/clustering-pca-k-means.ipynb Kaggle-top-3-notebook/2_Clustering_PCA_KMeans/2_Clustering_PCA_KMeans.ipynb
 
           # NLP GRU
-          kaggle kernels pull adelanseur/nlp-gru-emotions-analysis -p Kaggle-top-3-notebook
           mkdir -p Kaggle-top-3-notebook/3_NLP_GRU_Emotions/images
-          mv Kaggle-top-3-notebook/nlp-gru-emotions-analysis.ipynb Kaggle-top-3-notebook/3_NLP_GRU_Emotions/notebook.ipynb
+          kaggle kernels pull adelanseur/nlp-gru-emotions-analysis -p Kaggle-top-3-notebook/3_NLP_GRU_Emotions
+          mv Kaggle-top-3-notebook/3_NLP_GRU_Emotions/nlp-gru-emotions-analysis.ipynb Kaggle-top-3-notebook/3_NLP_GRU_Emotions/3_NLP_GRU_Emotions.ipynb
 
-      - name: Execute Notebooks
+      - name: Execute and Convert to HTML
         run: |
           for folder in Kaggle-top-3-notebook/*/; do
-            nb="$folder/notebook.ipynb"
-            echo "▶️ Executing $nb"
-            jupyter nbconvert --to notebook --inplace --execute --ExecutePreprocessor.timeout=300 "$nb" || echo "⚠️ Failed to execute $nb"
-          done
+            base=$(basename "$folder")
+            ipynb="$folder/$base.ipynb"
+            html="$folder/$base.html"
 
-      - name: Convert Notebooks to HTML
-        run: |
-          for folder in Kaggle-top-3-notebook/*/; do
-            nb="$folder/notebook.ipynb"
-            html="$folder/output.html"
-            jupyter nbconvert --to html --output "$html" "$nb" || echo "⚠️ Failed to convert $nb to HTML"
+            echo "▶️ Executing $ipynb"
+            jupyter nbconvert --to notebook --inplace --execute --ExecutePreprocessor.timeout=300 "$ipynb" || echo "⚠️ Execution failed for $ipynb"
+
+            echo "🌐 Converting to HTML: $html"
+            jupyter nbconvert --to html --output "$html" "$ipynb" || echo "⚠️ Conversion failed for $ipynb"
           done
 
       - name: Commit Changes
@@ -77,7 +73,7 @@ jobs:
           git add -f Kaggle-top-3-notebook/**/*
           git status
 
-          git commit -m "chore: Sync and execute notebooks on $(date +'%Y-%m-%d')" || \
+          git commit -m "chore: Sync and update notebooks on $(date +'%Y-%m-%d')" || \
             (echo "⚠️ No changes to commit" && git commit --allow-empty -m "chore: No notebook changes but ran successfully")
 
           git push
