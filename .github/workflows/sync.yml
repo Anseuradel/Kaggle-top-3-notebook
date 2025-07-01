@@ -99,11 +99,14 @@ jobs:
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-
-          git add -f Kaggle-top-3-notebook/**/* docs/*
+      
+          git add -f Kaggle-top-3-notebook/**/* || true
+          git add -f docs || true
+      
           git status
-
+      
           git commit -m "chore: Sync and update notebooks, datasets, and HTML previews on $(date +'%Y-%m-%d')" || \
             (echo "⚠️ No changes to commit" && git commit --allow-empty -m "chore: Empty commit run")
 
           git push
+
