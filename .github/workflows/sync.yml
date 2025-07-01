@@ -1,4 +1,5 @@
 name: Sync Kaggle Notebooks
+
 on: [workflow_dispatch]
 
 jobs:
@@ -29,7 +30,7 @@ jobs:
           echo '{"username":"'$KAGGLE_USERNAME'","key":"'$KAGGLE_KEY'"}' > ~/.kaggle/kaggle.json
           chmod 600 ~/.kaggle/kaggle.json
 
-      - name: Download All 3 Notebooks
+      - name: Download Top 3 Notebooks
         run: |
           mkdir -p "Kaggle-top-3-notebook"
           
@@ -48,43 +49,26 @@ jobs:
             mv "Kaggle-top-3-notebook/nlp-gru-emotions-analysis.ipynb" "Kaggle-top-3-notebook/3_nlp-gru-emotions-analysis.ipynb" || \
             echo "❌ Failed to download Third Notebook"
 
-          # Verify downloads
-          echo "=== Downloaded Files ==="
-          ls -la "Kaggle-top-3-notebook/"
-
-      - name: Convert to HTML
-        run: |
-          cd "Kaggle-top-3-notebook"
-          # Add --template full for complete HTML structure
-          jupyter nbconvert --to html --template full *.ipynb || echo "⚠️ Conversion failed"
-          ls -la *.html
-          cd ..
-
-      - name: Fix HTML Rendering
+      - name: Execute and Convert to HTML
         run: |
           cd Kaggle-top-3-notebook
-          for file in *.html; do
-            # Create proper HTML structure
-            echo '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>' > temp.html
-            # Extract just the <body> content from nbconvert output
-            awk '/<body>/,/<\/body>/' "$file" | sed '1d;$d' >> temp.html
-            echo '</body></html>' >> temp.html
-            mv temp.html "$file"
+          for nb in *.ipynb; do
+            jupyter nbconvert --to html --execute --ExecutePreprocessor.timeout=600 "$nb" --output "${nb%.ipynb}.html" || \
+              echo "⚠️ Failed to convert $nb"
           done
-
-      - name: Verify HTML Files
-        run: |
-          cd Kaggle-top-3-notebook
-          echo "=== HTML File Headers ==="
-          head -n 5 *.html
           cd ..
+
+      - name: Move HTML to docs for GitHub Pages
+        run: |
+          mkdir -p docs
+          cp Kaggle-top-3-notebook/*.html docs/
 
       - name: Commit Changes
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-          git add -f "Kaggle-top-3-notebook/*"
+          git add -f Kaggle-top-3-notebook/* docs/*
           git status
-          git commit -m "chore: Update all 3 notebooks $(date +'%Y-%m-%d')" || \
+          git commit -m "chore: Sync top 3 notebooks and HTMLs $(date +'%Y-%m-%d')" || \
             (echo "⚠️ No changes to commit" && git commit --allow-empty -m "Debug: Empty commit")
           git push
