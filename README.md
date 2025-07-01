@@ -11,13 +11,11 @@ This repository automatically syncs my best Kaggle notebooks with complete outpu
 
 ## 📚 Notebook Collection
 
-<div align="center">
-
-| # | Notebook | Description | Badges | Links |
-|---|----------|-------------|--------|-------|
-| 1 | **Manga Sales Analysis** | EDA + ML on manga sales data | ![Kaggle](https://img.shields.io/badge/Kaggle-Notebook-20BEFF?logo=kaggle) ![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python) | [![Open](https://img.shields.io/badge/▶_Notebook-181717?logo=github)](1_Manga_Sales.ipynb) [![HTML](https://img.shields.io/badge/📊_HTML_Preview-E44D26?logo=html5)](1_Manga_Sales.html) |
-| 2 | **PCA + Clustering** | Unsupervised learning with PCA | ![Kaggle](https://img.shields.io/badge/Kaggle-Notebook-20BEFF?logo=kaggle) ![Scikit-learn](https://img.shields.io/badge/Scikit--Learn-orange?logo=scikit-learn) | [![Open](https://img.shields.io/badge/▶_Notebook-181717?logo=github)](2_Clustering_PCA_KMeans.ipynb) [![HTML](https://img.shields.io/badge/📊_HTML_Preview-E44D26?logo=html5)](2_Clustering_PCA_KMeans.html) |
-| 3 | **GRU Emotion Detection** | NLP using GRU networks | ![Kaggle](https://img.shields.io/badge/Kaggle-Notebook-20BEFF?logo=kaggle) ![TensorFlow](https://img.shields.io/badge/TensorFlow-FF6F00?logo=tensorflow) | [![Open](https://img.shields.io/badge/▶_Notebook-181717?logo=github)](3_NLP_GRU_Emotions.ipynb) [![HTML](https://img.shields.io/badge/📊_HTML_Preview-E44D26?logo=html5)](3_NLP_GRU_Emotions.html) |
+| # | Notebook | Description | Links |
+|---|----------|-------------|-------|
+| 1 | **Manga Sales Analysis** | EDA + ML on manga sales data | [![Open Notebook](https://img.shields.io/badge/▶_Notebook-181717?logo=github)](Kaggle-top-3-notebook/1_Manga_Sales.ipynb) [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Anseuradel/Kaggle-top-3-notebooks/HEAD?labpath=Kaggle-top-3-notebook%2F1_Manga_Sales.ipynb) |
+| 2 | **PCA + Clustering** | Unsupervised learning with PCA | [![Open Notebook](https://img.shields.io/badge/▶_Notebook-181717?logo=github)](Kaggle-top-3-notebook/2_Clustering_PCA_KMeans.ipynb) [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Anseuradel/Kaggle-top-3-notebooks/HEAD?labpath=Kaggle-top-3-notebook%2F2_Clustering_PCA_KMeans.ipynb) |
+| 3 | **GRU Emotion Detection** | NLP using GRU networks | [![Open Notebook](https://img.shields.io/badge/▶_Notebook-181717?logo=github)](Kaggle-top-3-notebook/3_NLP_GRU_Emotions.ipynb) [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Anseuradel/Kaggle-top-3-notebooks/HEAD?labpath=Kaggle-top-3-notebook%2F3_NLP_GRU_Emotions.ipynb) |
 
 </div>
 
