@@ -12,14 +12,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Setup Python & Install Dependencies
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-
-      - name: Install Dependencies
-        run: |
-          pip install --upgrade pip kaggle nbconvert
+      - run: pip install --upgrade pip kaggle nbconvert
 
       - name: Configure Kaggle API
         env:
@@ -30,46 +27,48 @@ jobs:
           echo '{"username":"'$KAGGLE_USERNAME'","key":"'$KAGGLE_KEY'"}' > ~/.kaggle/kaggle.json
           chmod 600 ~/.kaggle/kaggle.json
 
-      - name: Download Notebooks
+      - name: Download Notebooks with Debug
         run: |
           mkdir -p "Kaggle-top-3-notebook"
+          ls -R .
 
-          # Skip Manga Sales, assume it's already tracked as 1_Manga_Sales.ipynb
+          echo "📦 Pulling 1_Manga_Sales.ipynb"
+          kaggle kernels pull adelanseur/manga-sales-eda-ml -p "Kaggle-top-3-notebook" || echo "❌ Manga pull failed"
+          mv "Kaggle-top-3-notebook/manga-sales-eda-ml.ipynb" "Kaggle-top-3-notebook/1_Manga_Sales.ipynb" || echo "❌ move Manga failed"
+          
+          echo "📦 Pulling clustering-pca-k-means"
+          kaggle kernels pull adelanseur/clustering-pca-k-means -p "Kaggle-top-3-notebook" || echo "❌ clustering pull failed"
+          mv "Kaggle-top-3-notebook/clustering-pca-k-means.ipynb" "Kaggle-top-3-notebook/2_clustering-pca-k-means.ipynb" || echo "❌ move clustering failed"
+          
+          echo "📦 Pulling nlp-gru-emotions-analysis"
+          kaggle kernels pull adelanseur/nlp-gru-emotions-analysis -p "Kaggle-top-3-notebook" || echo "❌ nlp pull failed"
+          mv "Kaggle-top-3-notebook/nlp-gru-emotions-analysis.ipynb" "Kaggle-top-3-notebook/3_nlp-gru-emotions-analysis.ipynb" || echo "❌ move nlp failed"
+          
+          echo "📂 Files after download:"
+          ls -R Kaggle-top-3-notebook
 
-          # 2. clustering-pca-k-means
-          kaggle kernels pull adelanseur/clustering-pca-k-means -p "Kaggle-top-3-notebook" && \
-            mv "Kaggle-top-3-notebook/clustering-pca-k-means.ipynb" "Kaggle-top-3-notebook/2_clustering-pca-k-means.ipynb" || \
-            echo "❌ Failed to download clustering-pca-k-means"
-
-          # 3. nlp-gru-emotions-analysis
-          kaggle kernels pull adelanseur/nlp-gru-emotions-analysis -p "Kaggle-top-3-notebook" && \
-            mv "Kaggle-top-3-notebook/nlp-gru-emotions-analysis.ipynb" "Kaggle-top-3-notebook/3_nlp-gru-emotions-analysis.ipynb" || \
-            echo "❌ Failed to download nlp-gru-emotions-analysis"
-
-      - name: Execute All Notebooks
+      - name: Execute with Debug
         run: |
           cd Kaggle-top-3-notebook
           for nb in *.ipynb; do
             echo "▶️ Executing $nb"
-            jupyter nbconvert --to notebook --inplace --execute --ExecutePreprocessor.timeout=600 "$nb" || \
-              echo "⚠️ Execution failed for $nb"
+            jupyter nbconvert --to notebook --inplace --execute --ExecutePreprocessor.timeout=60 "$nb" || echo "⚠️ Execution failed for $nb"
           done
+          echo "📂 Files after execution:"
+          ls -R .
           cd ..
 
-      - name: Commit and Push Updated Notebooks
+      - name: Commit & Push if changed
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-
           git add -f Kaggle-top-3-notebook/*.ipynb
-          git status
-
-          # Check if there are changes
+          echo "📄 git diff staged:"
+          git diff --cached --name-status || echo "⚠️ No diff detected"
           if git diff --cached --quiet; then
             echo "⚠️ No changes to commit"
-            git commit --allow-empty -m "Debug: Empty commit to confirm workflow ran"
+            git commit --allow-empty -m "Debug: No changes but workflow completed"
           else
-            git commit -m "chore: Sync Kaggle notebooks with output on $(date +'%Y-%m-%d')"
+            git commit -m "chore: Sync notebooks with outputs at $(date +'%Y-%m-%d')"
           fi
-
           git push
