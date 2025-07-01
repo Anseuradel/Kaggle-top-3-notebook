@@ -52,10 +52,11 @@ jobs:
           echo "=== Downloaded Files ==="
           ls -la "Kaggle-top-3-notebook/"
 
-      - name: Convert to HTML (Optional)
+      - name: Convert to HTML
         run: |
           cd "Kaggle-top-3-notebook"
-          jupyter nbconvert --to html *.ipynb || echo "⚠️ Conversion failed (missing nbconvert?)"
+          # Add --template full for complete HTML structure
+          jupyter nbconvert --to html --template full *.ipynb || echo "⚠️ Conversion failed"
           ls -la *.html
           cd ..
 
@@ -63,10 +64,20 @@ jobs:
         run: |
           cd Kaggle-top-3-notebook
           for file in *.html; do
-            echo "<!DOCTYPE html>" > temp.html
-            cat "$file" >> temp.html
+            # Create proper HTML structure
+            echo '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>' > temp.html
+            # Extract just the <body> content from nbconvert output
+            awk '/<body>/,/<\/body>/' "$file" | sed '1d;$d' >> temp.html
+            echo '</body></html>' >> temp.html
             mv temp.html "$file"
           done
+
+      - name: Verify HTML Files
+        run: |
+          cd Kaggle-top-3-notebook
+          echo "=== HTML File Headers ==="
+          head -n 5 *.html
+          cd ..
 
       - name: Commit Changes
         run: |
