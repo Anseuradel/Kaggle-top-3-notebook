@@ -3,7 +3,9 @@ import kaggle
 from kaggle.api.kaggle_api_extended import KaggleApi
 
 COMPETITIONS = [
-    "manga-sales-prediction",  # replace with your target competitions
+    "manga-sales-prediction",
+    "clustering-pca-k-means",
+    "nlp-gru-emotions-analysis",# replace with your target competitions
 ]
 
 TOP_K = 3
